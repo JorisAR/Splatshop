@@ -120,7 +120,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 	Runtime::mouseEvents.onMouseButton(button, action, mods);
 }
 
-void GLRenderer::init(){
+void GLRenderer::init(int p_width, int p_height){
 	
 	camera = make_shared<Camera>();
 
@@ -168,8 +168,8 @@ void GLRenderer::init(){
 
 		// window = glfwCreateWindow(mode->width - 100, mode->height - 100, "Splat Editor", nullptr, nullptr);
 
-		int width = 1920;
-		int height = 1080;
+		int width = p_width;
+		int height = p_height;
 		window = glfwCreateWindow(width, height, "Splat Editor", nullptr, nullptr);
 
 		if (!window) {

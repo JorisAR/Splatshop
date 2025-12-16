@@ -1612,7 +1612,6 @@ void SplatEditor::draw(Scene* scene, vector<RenderTarget> targets){
 	cuCtxSynchronize();
 
 	if(settings.splatRenderer == SPLATRENDERER_3DGS){
-
 		// if(settings.intersectionMode && INTERSECTION_3DGS || settings.intersectionMode ==INTERSECTION_TIGHTBB){
 		// 	drawsplats_3dgs_concurrent_fragintersections(scene, concurrentTargets);
 		// }else 

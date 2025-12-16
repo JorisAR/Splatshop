@@ -14,9 +14,21 @@
 
 using namespace std;
 
+struct CmdOptions {
+	std::string filePath;
+	std::string camerasPath;
+	int width = 1920;
+	int height = 1080;
+	bool runTest = false;
+	int testRepetitions = 50;
+};
+
+CmdOptions cmdOpt;
+
+
 SplatEditor* editor = nullptr;
 
-void initCuda(){
+void initCuda() {
 	cuInit(0);
 
 	CUcontext context;
@@ -26,9 +38,9 @@ void initCuda(){
 	// cuCtxSetLimit(CU_LIMIT_MALLOC_HEAP_SIZE, 10'000'000'000);
 
 	CUmemAllocationProp prop = {};
-	prop.type          = CU_MEM_ALLOCATION_TYPE_PINNED;
+	prop.type = CU_MEM_ALLOCATION_TYPE_PINNED;
 	prop.location.type = CU_MEM_LOCATION_TYPE_DEVICE;
-	prop.location.id   = CURuntime::device;
+	prop.location.id = CURuntime::device;
 
 	size_t granularity_minimum;
 	size_t granularity_recommended;
@@ -41,8 +53,8 @@ void initCuda(){
 
 void initScene() {
 
-	Runtime::controls->yaw    = -1.325;
-	Runtime::controls->pitch  = -0.330;
+	Runtime::controls->yaw = -1.325;
+	Runtime::controls->pitch = -0.330;
 	Runtime::controls->radius = 4.691;
 	Runtime::controls->target = { -0.028, -0.100, 2.301, };
 
@@ -51,18 +63,20 @@ void initScene() {
 
 	// string path = "./gaussians_w_pca.ply";
 	// string path = "./splatmodels_benchmark_garden_far/scene.json";
-	string path = "./splatmodels/scene.json";
+	//string path = "./splatmodels/scene.json";
+	string path = cmdOpt.filePath.empty() ? "./splatmodels/scene.json" : cmdOpt.filePath;
+
 	// string path = "E:/resources/gaussian_splats/garden.ply";
 	// string path = "E:/resources/splats/gardentable.ply";
 	// string path = "./splatmodels_3dgs_and_perspcorrect/scene.json";
 	// string path = "/home/hahlbohm/code/nerficg_public/nerficg/output/HTGS/htgs_garden_2025-03-06-20-25-48/gaussians.ply";
 	// string path = "F:/SplatEditor/city_gaussians_mc_aerial_c36.ply";
 	// string path = "F:/SplatEditor/splatmodels.json";
-
-	if(fs::exists(path)){
-		if(iEndsWith(path, ".json")){
+	if (fs::exists(path)) {
+		if (iEndsWith(path, ".json")) {
 			SplatsyFilesLoader::load(path, editor->scene, *Runtime::controls);
-		}else if(iEndsWith(path, ".ply")){
+		}
+		else if (iEndsWith(path, ".ply")) {
 			auto splats = GSPlyLoader::load(path);
 			shared_ptr<SNSplats> node = make_shared<SNSplats>(splats->name, splats);
 			editor->scene.world->children.push_back(node);
@@ -72,11 +86,12 @@ void initScene() {
 		// Runtime::controls->pitch  = -0.220;
 		// Runtime::controls->radius = 3.877;
 		// Runtime::controls->target = { 0.353, 0.518, 1.240, };
-	}else{
+	}
+	else {
 		println("Could not find file {}", path);
 	}
 
-	
+
 	// {// Lot's of gardens
 	// 	string path = "./garden.ply";
 
@@ -98,7 +113,7 @@ void initScene() {
 	// }
 
 
-	
+
 
 
 	// { // CITY GAUSSIANS
@@ -124,7 +139,7 @@ void initScene() {
 
 	// 	editor->scene.world->children.push_back(node);
 
-		
+
 
 	// 	// position: -3.8790769445903313, 12.585053772306223, -8.25656827876122 
 	// 	Runtime::controls->yaw    = -2.925;
@@ -135,7 +150,7 @@ void initScene() {
 	// }
 
 
-	
+
 	// { // CAMPUS
 	// 	string path = "E:/resources/splats/campus.ply";
 
@@ -238,11 +253,35 @@ void initScene() {
 
 }
 
-int main(){
+int main(int argc, char** argv) {
+
+	// parse command line
+	for (int i = 1; i < argc; i++) {
+		std::string arg = argv[i];
+		if (arg == "--file_path" && i + 1 < argc) {
+			cmdOpt.filePath = argv[++i];
+		}
+		if (arg == "--cameras_path" && i + 1 < argc) {
+			cmdOpt.camerasPath = argv[++i];
+		}
+		else if (arg == "--width" && i + 1 < argc) {
+			cmdOpt.width = std::stoi(argv[++i]);
+		}
+		else if (arg == "--height" && i + 1 < argc) {
+			cmdOpt.height = std::stoi(argv[++i]);
+		}
+		else if (arg == "--run_test") {
+			cmdOpt.runTest = true;
+		}
+		else if (arg == "--test_repetitions" && i + 1 < argc) {
+			cmdOpt.testRepetitions = std::stoi(argv[++i]);
+		}
+	}
 
 	initCuda();
 
-	GLRenderer::init();
+	GLRenderer::init(cmdOpt.width, cmdOpt.height);
+	GLRenderer::camera = std::make_shared<Camera>();
 
 	SplatEditor::setup();
 	editor = SplatEditor::instance;
@@ -253,7 +292,7 @@ int main(){
 		uint8_t* data = stbi_load(imgPath.c_str(), &Runtime::gltex_symbols_width, &Runtime::gltex_symbols_height, &n, 4);
 
 		int numPixels = Runtime::gltex_symbols_width * Runtime::gltex_symbols_height;
-		for(int i = 0; i < numPixels; i++){
+		for (int i = 0; i < numPixels; i++) {
 			data[4 * i + 0] = 255 - data[4 * i + 0];
 			data[4 * i + 1] = 255 - data[4 * i + 1];
 			data[4 * i + 2] = 255 - data[4 * i + 2];
@@ -262,7 +301,7 @@ int main(){
 		glGenTextures(1, &Runtime::gltex_symbols);
 		glBindTexture(GL_TEXTURE_2D, Runtime::gltex_symbols);
 
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -279,7 +318,7 @@ int main(){
 		uint8_t* data = stbi_load(imgPath.c_str(), &Runtime::gltex_symbols_32x32_width, &Runtime::gltex_symbols_32x32_height, &n, 4);
 
 		int numPixels = Runtime::gltex_symbols_32x32_width * Runtime::gltex_symbols_32x32_height;
-		for(int i = 0; i < numPixels; i++){
+		for (int i = 0; i < numPixels; i++) {
 			data[4 * i + 0] = data[4 * i + 0];
 			data[4 * i + 1] = data[4 * i + 1];
 			data[4 * i + 2] = data[4 * i + 2];
@@ -288,7 +327,7 @@ int main(){
 		glGenTextures(1, &Runtime::gltex_symbols_32x32);
 		glBindTexture(GL_TEXTURE_2D, Runtime::gltex_symbols_32x32);
 
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -304,29 +343,32 @@ int main(){
 
 	initScene();
 
-	glfwSetDropCallback(GLRenderer::window, [](GLFWwindow* window, int count, const char** paths){
-		
-		for(int i = 0; i < count; i++){
+	glfwSetDropCallback(GLRenderer::window, [](GLFWwindow* window, int count, const char** paths) {
+
+		for (int i = 0; i < count; i++) {
 			string path = paths[i];
 
-			if(fs::exists(path)){
-				if(iEndsWith(path, ".json")){
+			if (fs::exists(path)) {
+				if (iEndsWith(path, ".json")) {
 					SplatsyFilesLoader::load(path, editor->scene, *Runtime::controls);
-				}else if(iEndsWith(path, ".ply")){
+				}
+				else if (iEndsWith(path, ".ply")) {
 					auto splats = GSPlyLoader::load(path);
 					shared_ptr<SNSplats> node = make_shared<SNSplats>(splats->name, splats);
 					editor->scene.world->children.push_back(node);
 					editor->setSelectedNode(node.get());
-				}else if(fs::is_directory(path)){
+				}
+				else if (fs::is_directory(path)) {
 
 					bool hasSceneJson = fs::exists(path + "/scene.json");
 					bool hasAssetDir = fs::exists(path + "/assets");
 					bool hasSplatsDir = fs::exists(path + "/splats");
 
-					if(hasSceneJson && hasAssetDir && hasSplatsDir){
+					if (hasSceneJson && hasAssetDir && hasSplatsDir) {
 						SplatsyFilesLoader::load(path + "/scene.json", editor->scene, *Runtime::controls);
 					}
-				}else if(iEndsWith(path, ".glb")){
+				}
+				else if (iEndsWith(path, ".glb")) {
 					// auto glb = GLBLoader::load(path);
 
 					// shared_ptr<SNTriangles> node = make_shared<SNTriangles>(path);
@@ -338,7 +380,7 @@ int main(){
 					// Runtime::controls->focus(node->aabb.min, node->aabb.max, 1.0f);
 
 
-					GLBLoader::load(path, [&](GLB glb){
+					GLBLoader::load(path, [&](GLB glb) {
 						shared_ptr<SNTriangles> node = make_shared<SNTriangles>(path);
 						node->set(glb.positions, glb.uvs);
 						node->setTexture(glb.textureSize, glb.texture->data);
@@ -349,8 +391,9 @@ int main(){
 					});
 				}
 
-				
-			}else{
+
+			}
+			else {
 				println("Could not find file {}", path);
 			}
 		}
@@ -411,10 +454,57 @@ int main(){
 	// 	Runtime::mouseEvents.pos_x = x - window_x;
 	// 	Runtime::mouseEvents.pos_y = GLRenderer::height - (y - window_y);
 	// });
+	vector<CameraPose> poses{};
+	if (!cmdOpt.camerasPath.empty()) {
+		poses = loadCameraPoses(cmdOpt.camerasPath);
+		std::cout << "Loaded " << poses.size() << " camera poses\n";
+	}
+
+	int poseIndex = 0;
+	int poseCount = poses.size();	
+	int repetition = 0;
+	double totalTime = 0;
+	vector<float> cameraFrameTimes{};
+	CameraPose *pose = poseCount > 0 ? &poses[0] : nullptr;
 
 	GLRenderer::loop(
-		[&]() {editor->update();},
-		[&]() {editor->render();}
+		[&]() {
+		editor->update();
+	},
+		[&]() {
+		auto start = std::chrono::high_resolution_clock::now();
+		if (pose) {
+			GLRenderer::camera->setFromPose(*pose);
+		}
+		if (cmdOpt.runTest) {
+			editor->settings.hideGUI = true;
+			editor->settings.showAxes = false;
+			editor->settings.showGrid = false;
+		}
+			
+		editor->render(); 
+		auto end = std::chrono::high_resolution_clock::now();
+		totalTime += std::chrono::duration<double, std::milli>(end - start).count();
+
+		if (++repetition >= cmdOpt.testRepetitions && cmdOpt.runTest) {
+			
+			cameraFrameTimes.push_back(static_cast<float>(totalTime) / cmdOpt.testRepetitions);
+			totalTime = 0;
+			repetition = 0;
+			if(poseCount > 0)
+				pose = &poses[glm::clamp(++poseIndex, 0, poseCount - 1)];
+			if (poseIndex == poseCount)
+			{
+				for (int i = 0; i < poseCount; i++) {
+					std::cout << "Camera " << i << ": "
+						<< cameraFrameTimes[i] << " ms\n";
+				}
+				std::cout << std::endl;
+				exit(EXIT_SUCCESS);
+			}
+				
+		}
+	}
 	);
 
 	return 0;

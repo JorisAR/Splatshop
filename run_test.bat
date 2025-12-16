@@ -1,0 +1,1 @@
+start D:\Projects\Splatshop\build\Release\SplatEditor.exe --file_path D:\Projects\GaussianSplattingScenes\original_gaussian_splatting\bicycle\point_cloud\iteration_30000\point_cloud.ply --cameras_path D:\Projects\GaussianSplattingScenes\original_gaussian_splatting\bicycle\cameras.json --run_test --test_repetitions 10

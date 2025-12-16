@@ -22,6 +22,7 @@
 #include "unsuck.hpp"
 #include "OrbitControls.h"
 #include "ProxyControls.h"
+#include "utils.h"
 
 // using namespace std;
 using glm::dvec3;
@@ -246,6 +247,22 @@ struct Camera{
 		return VP;
 	}
 
+	void setFromPose(const CameraPose& pose) {
+		position = pose.position;
+		rotation = glm::dmat4(pose.rotation); // promote to 4x4
+
+		// Build world matrix: rotation + translation
+		world = glm::dmat4(1.0);
+		world[0] = glm::dvec4(rotation[0]);
+		world[1] = glm::dvec4(rotation[1]);
+		world[2] = glm::dvec4(rotation[2]);
+		world[3] = glm::dvec4(position, 1.0);
+
+		setSize(pose.width, pose.height);
+		update();
+	}
+
+
 
 };
 
@@ -272,7 +289,7 @@ struct GLRenderer{
 	inline static int height = 0;
 	inline static string selectedMethod = "";
 
-	static void init();
+	static void init(int width, int height);
 
 	static shared_ptr<GLTexture> createTexture(int width, int height, GLuint colorType);
 

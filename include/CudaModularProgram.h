@@ -13,6 +13,8 @@
 #include <cmath>
 #include "cuda.h"
 
+//#define DEBUG_PRINT_CUDA
+
 using std::string;
 
 using namespace std;
@@ -116,11 +118,11 @@ struct CudaModule{
 
 	void compile(){
 		auto tStart = now();
-
+#ifdef DEBUG_PRINT_CUDA
 		cout << "================================================================================" << endl;
 		cout << "=== COMPILING: " << fs::path(path).filename().string() << endl;
 		cout << "================================================================================" << endl;
-
+#endif
 		success = false;
 
 		auto parent = fs::path(path).parent_path();
@@ -186,12 +188,13 @@ struct CudaModule{
 			"--split-compile=0",                 // compiler optimizations in parallel. 0 -> max available threads
 			"--time=cuda_compile_time.txt",      // show compiler timings
 		};
-
+#ifdef DEBUG_PRINT_CUDA
 		println("Compile Options: ");
 		for(auto opt : opts){
 			println("    {}", opt);
 		}
 		// cout << "====" << endl;
+#endif
 
 		nvrtcResult res = nvrtcCompileProgram(prog, opts.size(), opts.data());
 		
@@ -384,11 +387,11 @@ struct CudaModularProgram{
 	}
 
 	void link(){
-
+#ifdef DEBUG_PRINT_CUDA
 		cout << "================================================================================" << endl;
 		cout << "=== LINKING" << endl;
 		cout << "================================================================================" << endl;
-		
+#endif
 		auto tStart = now();
 
 		for(auto module : modules){
@@ -428,12 +431,12 @@ struct CudaModularProgram{
 			"-optimize-unused-variables",
 			"-split-compile=0",
 		};
-
+#ifdef DEBUG_PRINT_CUDA
 		println("Link Options: ");
 		for(auto opt : lopts){
 			println("    {}", opt);
 		}
-
+#endif
 		nvJitLinkHandle handle;
 		nvJitLinkCreate(&handle, 2, lopts.data());
 

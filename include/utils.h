@@ -27,3 +27,14 @@ namespace morton{
 		return answer;
 	}
 }
+
+struct CameraPose {
+	int id;
+	std::string imgName;
+	int width;
+	int height;
+	glm::dvec3 position;
+	glm::dmat3 rotation; // 3x3 rotation matrix
+	double fx;
+	double fy;
+};

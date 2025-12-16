@@ -21,6 +21,7 @@
 #include "AssetLibrary.h"
 #include "GSPlyLoader.h"
 
+
 namespace fs = std::filesystem;
 using json = nlohmann::json;
 
@@ -126,3 +127,55 @@ struct SplatsyFilesLoader{
 	}
 
 };
+
+inline vector<CameraPose> loadCameraPoses(const string& filename) {
+	vector<CameraPose> poses;
+
+	std::ifstream f(filename);
+	if (!f.is_open()) {
+		throw std::runtime_error("Could not open camera JSON: " + filename);
+	}
+
+	json j;
+	f >> j;
+
+	for (auto& c : j) {
+		CameraPose pose;
+		pose.id = c.value("id", -1);
+		pose.imgName = c.value("img_name", "");
+		pose.width = c.value("width", 0);
+		pose.height = c.value("height", 0);
+
+		auto pos = c["position"];
+		pose.position = glm::dvec3(pos[0], pos[1], pos[2]);
+		pose.position = glm::dvec3(pose.position.x, pose.position.y, pose.position.z);
+
+		auto rot = c["rotation"];
+		glm::dmat3 rotation = glm::dmat3(
+			rot[0][0], rot[0][1], rot[0][2],
+			rot[1][0], rot[1][1], rot[1][2],
+			rot[2][0], rot[2][1], rot[2][2]
+		);
+
+		//pose.rotation[0] = -rotation[0];
+		//pose.rotation[1] = -rotation[1];
+		//pose.rotation[2] = -rotation[2];
+
+		glm::dmat3 cv2gl(
+			1, 0, 0,
+			0, -1, 0,
+			0, 0, -1
+		);
+		pose.rotation = cv2gl * rotation;
+
+
+		pose.rotation = glm::transpose(pose.rotation);
+
+		pose.fx = c.value("fx", 0.0);
+		pose.fy = c.value("fy", 0.0);
+
+		poses.push_back(pose);
+	}
+
+	return poses;
+}

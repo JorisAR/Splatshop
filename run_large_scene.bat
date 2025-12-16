@@ -1,0 +1,1 @@
+start D:\Projects\Splatshop\build\Release\SplatEditor.exe --file_path D:\Projects\GaussianSplattingScenes\large_scale\andrii\town\point_cloud\iteration_30000\point_cloud.ply --cameras_path D:\Projects\GaussianSplattingScenes\large_scale\andrii\town\cameras.json --run_test --test_repetitions 10

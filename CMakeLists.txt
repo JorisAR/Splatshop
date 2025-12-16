@@ -64,6 +64,14 @@ ADD_IMGUIZMO(${TARGET_NAME})
 target_include_directories(${TARGET_NAME} PRIVATE ./include)
 target_include_directories(${TARGET_NAME} PRIVATE ./libs)
 
+find_package(CUDAToolkit REQUIRED)
+target_link_libraries(${TARGET_NAME}
+    CUDA::cuda_driver
+    CUDA::nvrtc
+    CUDA::nvJitLink
+)
+
+
 # I give up, let's just include OpenVR like this.
 target_include_directories(${TARGET_NAME} PRIVATE ./libs/openvr/headers)
 if (WIN32)
